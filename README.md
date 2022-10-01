@@ -1,175 +1,244 @@
-# Adding React to Rails
+# Adding React to Flask
 
 ## Learning Goals
 
-- Use `create-react-app` to generate a new React application within a Rails
-  project
-- Proxy requests from React to Rails in development
-- Use the `foreman` gem to run React and Rails together
+- Use React and Flask together to build beautiful and powerful web applications.
+- Organize client and server code so that it is easy to understand and maintain.
+
+***
+
+## Key Vocab
+
+- **Full-Stack Development**: development of a frontend and a backend for an
+  application. True full-stack development includes a database, a logic/server
+  layer, and a frontend built in JavaScript, HTML, and CSS.
+- **Backend**: the layer of a full-stack application that handles business logic
+  and other programmatic tasks that users do not or should not see. Can be
+  written in many languages, including Python, Java, Ruby, PHP, and more.
+- **Frontend**: the layer of a full-stack application that users see and
+  interact with. It is always written in the frontend languages: JavaScript,
+  HTML, and CSS. (_There are others now, but they are based on these three._)
+- **Cross-Origin Resource Sharing (CORS)**: a method for a server to indicate
+  any ports (or other identifiers) for servers that can share its resources.
+- **Transmission Control Protocol (TCP)**: a protocol that defines how computers
+  send data to each other. A connection is formed and stars active until the
+  applications on either end have finished sending data to one another.
+- **Hypertext Transfer Protocol (HTTP)**: a stateless protocol where
+  applications communicate for the length of time that it takes for data to be
+  transferred.
+- **Websocket**: a protocol that allows clients and servers to communicate with
+  one another in both directions. The bidirectional nature of websocket
+  communication allows a connected state to be generated and the connection
+  maintained until it is terminated by one side. This allows for speedy and
+  seamless connections between frontends and backends.
+
+***
 
 ## Introduction
 
-In the last lesson, we created a Rails API from scratch. Now it's time to see
-how we can add a React frontend application as well.
+Earlier in this phase, we used React and Flask together for two different
+applications: Chatterbox, a messenger with CRUD functionality, and Plantsy,
+a plant shop with CRUD functionality through a RESTful backend. In these
+labs, we focused on the server-side (Python) code. Now, let's take a closer
+look at the JavaScript that creates the user interface.
 
-There are a number of ways to use React and Rails together, such as using the
-[`webpacker` gem](https://github.com/rails/webpacker) to manage JavaScript as
-part of your Rails application. However, we like the simplicity and the tooling
-that you get out of using [`create-react-app`](https://create-react-app.dev/) to
-generate a new React application within Rails. If you've used `create-react-app`
-before, you should feel right at home! We can also add a few additional tools to
-the process to make running React and Rails together a bit easier.
+***
 
-## Generating a React Application
+## Setup
 
-To get started, let's spin up our React application using `create-react-app`:
+This lesson contains the solution code from the Chatterbox lab. To run the
+application, open two terminal windows. In the first, enter the `server/`
+directory and run:
 
-```console
-$ npx create-react-app client --use-npm
-```
+- `pipenv install && pipenv shell` to enter your virtual environment.
+- `export FLASK_APP=app.py` and `export FLASK_RUN_PORT=5555` to configure your
+  Flask environment.
+- `flask db upgrade` to generate your database.
+- `python seed.py` to populate it.
+- `python app.py` to run your development server.
 
-This will create a new React application in a `client` folder, and will use npm
-instead of yarn to manage our dependencies.
+In the second window, enter the `client/` directory and run:
 
-When we're running React and Rails in development, we'll need two separate
-servers running on different ports — we'll run React on port 4000, and
-Rails on port 3000. Whenever we want to make a request to our Rails API from
-React, we'll need to make sure that our requests are going to port 3000.
+- `npm install` to retrieve the React project's dependencies.
+- `npm start` to start your development server and open the application.
 
-We can simplify this process of making requests to the correct port by using
-`create-react-app` in development to [proxy the requests to our API][proxy].
-This will let us write our network requests like this:
+> **NOTE: There's a lot more to keep track of now! When you have to run several
+> commands to start working, it's useful to write scripts to automate the
+> startup process. Refer back to "Configuring Python Applications" in Phase 3
+> if you need help getting started! Don't worry about messing things up- you can
+> always re-fork the lesson if you need to.**
+
+In your browser, you should see the Chatterbox app in all its glory:
+
+![screenshot of chatterbox app with purple header bar and messages from several
+users](
+https://curriculum-content.s3.amazonaws.com/python/python-p4-adding-react-to-flask-chatterbox.png)
+
+Once you've confirmed that the application is running correctly, open up the
+`client/` directory to explore our JavaScript code.
+
+***
+
+## React `fetch()`
+
+React uses a function called `fetch()` to retrieve data from APIs at other URLs.
+In order to get data with fetch, we put the command inside of a `useEffect` hook
+as seen in `client/src/components/App.js`. We include an empty array as a second
+argument (dependencies) to tell `useEffect` to only run `fetch()`, an
+asynchronous operation, on the first render of `App`.
 
 ```js
-fetch("/movies");
-// instead of fetch("http://localhost:3000/movies")
-```
-
-To set up this proxy feature, open the `package.json` file in the `client`
-directory and add this line at the top level of the JSON object:
-
-```json
-"proxy": "http://localhost:3000"
-```
-
-Let's also update the "start" script in the the `package.json` file to specify a
-different port to run our React app in development:
-
-```json
-"scripts": {
-  "start": "PORT=4000 react-scripts start"
-}
-```
-
-With that set up, let's try running our servers! In your terminal, run Rails:
-
-```console
-$ rails s
-```
-
-Then, open a new terminal, and run React:
-
-```console
-$ npm start --prefix client
-```
-
-This will run `npm start` in the client directory. Verify that your app is
-working by visiting:
-
-- [http://localhost:4000](http://localhost:4000) to view the React application
-- [http://localhost:3000/movies](http://localhost:3000/movies) to view the Rails
-  application
-
-We can also see how to make a request using `fetch`. In the React application,
-update your `App.js` file with the following code:
-
-```jsx
-import { useEffect } from "react";
+// client/src/components/App.js
 
 function App() {
+  ...
   useEffect(() => {
-    fetch("/movies")
+    fetch("http://127.0.0.1:5555/messages")
       .then((r) => r.json())
-      .then((movies) => console.log(movies));
+      .then((messages) => setMessages(messages));
   }, []);
-
-  return <h1>Hello from React!</h1>;
-}
-
-export default App;
+  ...
 ```
 
-This will use the `useEffect` hook to fetch data from our Rails API, which you
-can then view in the console.
+As we can see, this has the React application looking for a resource at
+`http://127.0.0.1:5555/messages`: our Flask API. The response data is `then()`
+converted to JSON if it is not already in that format, `then()` that data is
+used to populate the application with messages.
 
-## Running React and Rails Together
+We can throw much more into our chain here- for instance, if we're looking for a
+"200: OK" response from the server:
 
-Since we'll often want to run our React and Rails applications together, it can
-be helpful to be able to run them from just one command in the terminal instead
-of opening multiple terminals.
+```js
+// client/src/components/App.js
 
-To facilitate this, we'll use the excellent [foreman][] gem. Install it:
+function App() {
+  ...
+  useEffect(() => {
+    fetch("http://127.0.0.1:5555/messages")
+      .then(r => {
+        if (r.ok) {
+          return r.json
+        }
+        throw r;
+      })
+      .then((messages) => setMessages(messages))
+  }, []);
+  ...
+```
+
+It is wise when developing full-stack applications to look for the correct data
+formats and response codes from the server as you move forward. Since you wrote
+the backend yourself, this is _much_ easier than doing so while `fetch()`ing
+data from someone else's API and will help your users understand how to avoid
+errors in the future. In the example above, we simply `throw r` because it
+receives any error message we catch and send forward from our Flask backend!
+
+### `POST`, `PATCH`, `DELETE` with `fetch()`
+
+`fetch()` defaults to using `GET` as its HTTP method. If we want to carry out
+functions other than basic retrieves, we need to specify that and our message
+format
+
+```js
+//client/src/components/NewMessage.js
+
+function NewMessage({ currentUser, onAddMessage }) {
+  const [body, setBody] = useState("");
+
+  function handleSubmit(e) {
+    e.preventDefault();
+
+    fetch("http://127.0.0.1:5555/messages", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        username: currentUser.username,
+        body: body,
+      }),
+    })
+      .then((r) => r.json())
+      .then((newMessage) => {
+        onAddMessage(newMessage);
+        setBody("");
+      });
+  }
+  ...
+
+```
+
+Rather than `useEffect`, here we have a hook called `onAddMessage` passed to the
+`NewMessage` element that updates the entire app when a message is confirmed to
+have been created. `handleSubmit()` is invoked each time a user hits the "Send" button
+and generates a `POST` request with the body of the `NewMessage` element.
+
+`fetch()` takes an optional object as a second argument after the Flask API's
+URL with an HTTP request method, headers to specify the format of the message,
+and a message body. (`PATCH` requests need these elements as well!)
+
+After generating a new record in the database, Flask returns a response that
+is assigned to `r` and converted to JSON if necessary. Finally, we invoke
+`onAddMessage` to update the app with this new message and reset the form to
+be empty and ready for new input.
+
+```py
+# python code block
+print("statement")
+# => statement
+```
+
+```js
+// javascript code block
+console.log("use these for comparisons between languages.")
+// => use these for comparisons between languages.
+```
 
 ```console
-$ gem install foreman
+echo "bash/zshell statement"
+# => bash/zshell statement
 ```
 
-Foreman works with a special kind of file known as a Procfile, which lists
-different processes to run for our application. Some hosting services, such as
-Heroku, use a Procfile to run applications, so by using a Procfile in
-development as well, we'll simplify the deploying process later.
+<details>
+  <summary>
+    <em>Check for understanding text goes here! <code>Code statements go here.</code></em>
+  </summary>
 
-In the root directory, create a file `Procfile.dev` and add this code:
+  <h3>Answer.</h3>
+  <p>Elaboration on answer.</p>
+</details>
+<br/>
 
-```txt
-web: PORT=4000 npm start --prefix client
-api: PORT=3000 rails s
-```
+***
 
-Then, run it with Foreman:
+## Instructions
 
-```console
-$ foreman start -f Procfile.dev
-```
+This is a **test-driven lab**. Run `pipenv install` to create your virtual
+environment and `pipenv shell` to enter the virtual environment. Then run
+`pytest -x` to run your tests. Use these instructions and `pytest`'s error
+messages to complete your work in the `lib/` folder.
 
-This will start both React and Rails on separate ports, just like before; but
-now we can run both with one command!
+Instructions begin here:
 
-**There is one big caveat to this approach**: by running our client and server
-in the same terminal, it can be more challenging to read through the server logs
-and debug our code. Furthermore, `byebug` will not work. If you're doing a lot of
-debugging in the terminal, you should run the client and server separately to
-get a cleaner terminal output and allow terminal-based debugging with `byebug`.
+- Make sure to specify any class, method, variable, module, package names
+  that `pytest` will check for.
+- Any other instructions go here.
 
-You can run each application separately by opening two terminal windows and
-running each of these commands in a separate window:
+Once all of your tests are passing, commit and push your work using `git` to
+submit.
 
-```console
-$ npm start --prefix client
-$ rails s
-```
-
-This will run React on port 4000 (thanks to the configuration in the
-`client/package.json` file), and Rails on port 3000 (the default port).
+***
 
 ## Conclusion
 
-In the past couple lessons, we've seen how to put together the two pieces we'll
-need for full-stack applications by using `rails new` to create a new Rails API,
-and `create-react-app` to create a React project. Throughout the rest of this
-module, we'll focus on how our two applications communicate and share data.
+Conclusion summary paragraph. Include common misconceptions and what students
+will be able to do moving forward.
 
-## Check For Understanding
-
-Before you move on, make sure you can answer the following questions:
-
-1. What options do you have for running Rails and React at the same time?
-2. What are the advantages and disadvantages of using `foreman` as described in
-   this lesson?
+***
 
 ## Resources
 
-- [Proxying API Requests in Create React App][proxy]
+- [Resource 1](https://www.python.org/doc/essays/blurb/)
+- [Reused Resource][reused resource]
 
-[proxy]: https://create-react-app.dev/docs/proxying-api-requests-in-development/
-[foreman]: https://github.com/ddollar/foreman
+[reused resource]: https://docs.python.org/3/
