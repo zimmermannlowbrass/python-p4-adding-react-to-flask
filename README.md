@@ -21,7 +21,7 @@
 - **Cross-Origin Resource Sharing (CORS)**: a method for a server to indicate
   any ports (or other identifiers) for servers that can share its resources.
 - **Transmission Control Protocol (TCP)**: a protocol that defines how computers
-  send data to each other. A connection is formed and stars active until the
+  send data to each other. A connection is formed and stays active until the
   applications on either end have finished sending data to one another.
 - **Hypertext Transfer Protocol (HTTP)**: a stateless protocol where
   applications communicate for the length of time that it takes for data to be
@@ -76,6 +76,36 @@ https://curriculum-content.s3.amazonaws.com/python/python-p4-adding-react-to-fla
 
 Once you've confirmed that the application is running correctly, open up the
 `client/` directory to explore our JavaScript code.
+
+***
+
+## The Client-Server Model
+
+In previous lessons, we've discussed the functions of the client and server in
+web applications: the client handles what goes on in the browser (i.e. the tasks
+controlled by the user) and the server handles data from the database and hidden
+tasks that the user doesn't need to or shouldn't see. We use this separation of
+tasks to inform how we structure our applications in development.
+
+Within our base directory where we initialize Git, we create our basic
+documentation files like `README.md` and two directories: `client/` and
+`server/`. You may prefer to name them more descriptively, like
+`chatterbox-client/` and `chatterbox-server/`. (Some people find this
+redundant, others informative. Ultimately up to you!)
+
+Inside of the `client/` directory, you will use Node to create the skeleton for
+your client-side code and install dependencies. In the `server/` directory, you
+will use Pipenv to install dependencies, then Flask to create your server-side
+application and database. We will explore this in more detail in the next
+lesson.
+
+When development servers are run for both sides, the two can communicate over
+Transmission Control Protocols (TCP) such as HTTP and Websocket. Any TCP
+connection stays active until the two sides are done sending data to one
+another; in HTTP, the connection ends every time a message is sent. This is what
+we see in using `fetch()`. Websocket, another protocol, keeps the connection
+open until it is explicitly ended by either side- we will learn more about this
+with `socket.io` later in this module.
 
 ***
 
@@ -182,63 +212,45 @@ is assigned to `r` and converted to JSON if necessary. Finally, we invoke
 `onAddMessage` to update the app with this new message and reset the form to
 be empty and ready for new input.
 
+### CORS Recap
+
+Cross-Origin Resource Sharing, or CORS, is a mechanism that lets a server (the
+Flask application in our case) specify URL patterns other than its own from
+which the client should be allowed to load resources. This is carried out in
+HTTP headers, but we typically handle it in a more automated fashion with
+extensions like Flask-CORS.
+
+The Fetch API follows the same-origin policy, which enforces that resources can
+only be loaded from URL patterns owned by the application sending the request.
+This is why we need to use CORS in our Flask application, as seen in
+`server/app.py`:
+
 ```py
-# python code block
-print("statement")
-# => statement
+# server/app.py
+
+from flask import Flask
+from flask_cors import CORS
+...
+app = Flask(__name__)
+...
+CORS(app)
+
 ```
-
-```js
-// javascript code block
-console.log("use these for comparisons between languages.")
-// => use these for comparisons between languages.
-```
-
-```console
-echo "bash/zshell statement"
-# => bash/zshell statement
-```
-
-<details>
-  <summary>
-    <em>Check for understanding text goes here! <code>Code statements go here.</code></em>
-  </summary>
-
-  <h3>Answer.</h3>
-  <p>Elaboration on answer.</p>
-</details>
-<br/>
-
-***
-
-## Instructions
-
-This is a **test-driven lab**. Run `pipenv install` to create your virtual
-environment and `pipenv shell` to enter the virtual environment. Then run
-`pytest -x` to run your tests. Use these instructions and `pytest`'s error
-messages to complete your work in the `lib/` folder.
-
-Instructions begin here:
-
-- Make sure to specify any class, method, variable, module, package names
-  that `pytest` will check for.
-- Any other instructions go here.
-
-Once all of your tests are passing, commit and push your work using `git` to
-submit.
 
 ***
 
 ## Conclusion
 
-Conclusion summary paragraph. Include common misconceptions and what students
-will be able to do moving forward.
+This has been a brief review of concepts from Phase 2 and the beginning of
+Phase 4. Hopefully, this served as a good reminder of how to use `fetch()`,
+process `fetch()` data, and implement CORS! We will elaborate on these concepts
+and learn how to improve connections between full-stack application clients and
+servers in the coming lessons.
 
 ***
 
 ## Resources
 
-- [Resource 1](https://www.python.org/doc/essays/blurb/)
-- [Reused Resource][reused resource]
-
-[reused resource]: https://docs.python.org/3/
+- [Client-Server Model - GeeksforGeeks](https://www.geeksforgeeks.org/client-server-model/)
+- [Using the Fetch API - Mozilla](https://developer.mozilla.org/en-US/docs/Web/API/Fetch_API/Using_Fetch)
+- [Cross-Origin Reference Sharing (CORS) - Mozilla](https://developer.mozilla.org/en-US/docs/Web/HTTP/CORS)
